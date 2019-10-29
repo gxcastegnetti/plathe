@@ -16,7 +16,7 @@ p.PCs       = 100;     % number of total place cells (half in safe, half in dang
 p.FCs       = 25;     % number of fear cells
 p.W_0       = 0.25;    % initial synaptic strenght
 SpontFiring = 0.85;    % spontaneous firing rate (Par� and Collins, 2000)
-freezeThr   = 1.5;     % firing rate of BLA neurons during freezing (Par� and Collins, 2000). We take it as threshold for freezing.
+freezeThr   = 1.5;     % firing rate of BLA neurons during freezing (Parè and Collins, 2000). We take it as threshold for freezing.
 numTrainSpikes = 10;   % fixed number of spikes delivered during training
 
 %% Provide parameters for the neuron, synapse and plasticity models
@@ -27,7 +27,7 @@ p.v_rest    = -65;      % resting potential
 p.tau_m     = 0.02;     % time constant of the neural model
 p.R         = 10;       % resistance in the neural model
 p.dt        = 0.001;    % width of the time step
-p.lambda    = 0.0;
+p.lambda    = 0;
 
 % EPSP
 p.tau_1     = 50;
@@ -74,11 +74,11 @@ p.TrialDur   = 1;  % trial duration during training
 p.TimeRecall = 5;  % how many theta cycles during the test phase
 
 %% set EPSP amplitude
-p.A_EPSP = 0.6*1.45; % 10 mV - within observed range (Strober at al., 2015; Rosenkranz 2012; Cho et al. 2012)
+p.A_EPSP = 5; % 10 mV - within observed range (Strober at al., 2015; Rosenkranz 2012; Cho et al. 2012)
 
 %% run model
-in_freq = [4.5 5.0];                     % training frequency
-in_freq = 3:0.5:7;
+in_freq = [1.0 5.5];                     % training frequency
+%in_freq = 8:3:13;
 W_0 = p.W_0 + zeros(p.PCs,p.FCs);     % initial synaptic strength vector
 for f = 1:length(in_freq)
     

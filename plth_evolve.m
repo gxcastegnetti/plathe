@@ -84,6 +84,7 @@ for t = 1:length(in.time) - 1
     EPSP_log(:,:,t) = epsp;
     
 end
+figure,plot(squeeze(V_log(1,:)))
 
 %% find average firing rate for every postsynaptic cell
 numSpikes = sum(spk_amy,2);
