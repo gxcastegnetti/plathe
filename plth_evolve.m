@@ -12,13 +12,14 @@ NMDA_exp1 = zeros(p.PCs,p.FCs);       % parameters controlling NMDA synaptic cur
 NMDA_exp2 = zeros(p.PCs,p.FCs);
 BPAP_exp1 = zeros(p.FCs,1);           % parameters controlling BPAP dynamics
 BPAP_exp2 = zeros(p.FCs,1);
+vSoma     = p.v_rest*ones(p.FCs,1);
 
 %% assign memory to save some variables
 EPSP_log  = NaN(p.PCs,p.FCs,length(in.time));
 NMDA_log  = NaN(p.PCs,p.FCs,length(in.time));
 BPAP_log  = NaN(p.FCs,length(in.time));
 Ca_log    = NaN(p.PCs,p.FCs,length(in.time));
-V_log     = NaN(p.FCs,length(in.time));
+v_log     = NaN(p.FCs,length(in.time));
 
 %% temporal evolution
 Connect_up = Connect_in;
@@ -43,16 +44,19 @@ for t = 1:length(in.time) - 1
     end
         
     %% Compute membrane potential at the spines; DETERMINES PLASTICITY
-    epsp            = 2*Connect_up.*p.A_EPSP*(1-in.ACh)/0.7.*(EPSP_pre_exp1_HPC-EPSP_pre_exp2_HPC); % AMPA current from HPC (modulated by ACh)
+    epsp            = 2*Connect_in.*p.A_EPSP*(1-in.ACh)/0.49.*(EPSP_pre_exp1_HPC-EPSP_pre_exp2_HPC); % AMPA current from HPC (modulated by ACh)
     bpap_foo        = (p.I_bs_f*BPAP_exp1 + p.I_bs_s*BPAP_exp2) * 100;       % BPAP voltage
     bpap            = repmat(bpap_foo',p.PCs,1);                             % BPAP voltage
-    V               = bpap + epsp + p.v_E;                                   % total membrane potential at the spines - determines plasticity
-    Vsoma           = (sum(V - bpap,1)/p.PCs)';                              % total membrane potential at the soma - determines firing
-    nAct            = Vsoma > p.v_thr;
-    v(nAct)         = p.v_reset;                                             % firing condition
+    vSpine          = bpap + epsp + p.v_E;                                   % total membrane potential at the spines - determines plasticity
+    vSpine_sum      = (sum(vSpine - bpap,1)/p.PCs)';                              % total membrane potential at the soma - determines firing
+    dvSoma          = (-vSoma + vSpine_sum)/p.tau_m;
+    vSoma           = vSoma + dvSoma*p.dt;
+    nAct            = vSoma > p.v_thr;
+    vSoma(nAct)     = p.v_reset;                                             % firing condition
+    %if sum(nAct) > 0, keyboard, end
     spk_amy(nAct,t+1) = 1;                                                   % record spike time
-    B               = 1 ./ (1+exp(-0.062*V)*(p.Mg/3.57));                    % NMDA voltage dependency
-    H               = B .* (V-p.V_r);
+    B               = 1 ./ (1+exp(-0.062*vSpine)*(p.Mg/3.57));               % NMDA voltage dependency
+    H               = B .* (vSpine-p.V_r);
     I_nmda          = p.G_NMDA * H .* (p.I_f*NMDA_exp1 + p.I_s*NMDA_exp2);   % NMDA current
     
     %% Calcium concentration
@@ -79,12 +83,20 @@ for t = 1:length(in.time) - 1
     %% Log dynamic variables where necessary
     NMDA_log(:,:,t) = p.I_f*NMDA_exp1 + p.I_s*NMDA_exp2;
     BPAP_log(:,t)   = bpap_foo;
-    V_log(:,t)      = Vsoma';
+    v_log(:,t)      = vSoma';
     Ca_log(:,:,t)   = Ca;
     EPSP_log(:,:,t) = epsp;
     
 end
-figure,plot(squeeze(V_log(1,:)))
+
+%% Some diagnostic figure
+% figure('color', [1 1 1])
+% subplot(3,1,1)
+% plot(squeeze(EPSP_log(1,1,:))), title('EPSP')
+% subplot(3,1,2)
+% plot(squeeze(v_log(1,:))), title('V')
+% subplot(3,1,3)
+% plot(squeeze(BPAP_log(1,:))), title('BPAP')
 
 %% find average firing rate for every postsynaptic cell
 numSpikes = sum(spk_amy,2);

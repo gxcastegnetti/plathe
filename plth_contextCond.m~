@@ -12,8 +12,8 @@ restoredefaultpath, clear RESTOREDEFAULTPATH_EXECUTED
 % addpath([pwd,'/tools']);
 
 %% Network and arena parameters
-p.PCs       = 200;     % number of total place cells (half in safe, half in dangerous compartment)
-p.FCs       = 50;      % number of fear cells
+p.PCs       = 400;     % number of total place cells (half in safe, half in dangerous compartment)
+p.FCs       = 100;      % number of fear cells
 p.W_0       = 0.25;    % initial synaptic strenght
 spontFiring = 0.85;    % spontaneous firing rate (Par� and Collins, 2000)
 freezeThr   = 1.5;     % firing rate of BLA neurons during freezing (Parè and Collins, 2000). We take it as threshold for freezing.
@@ -97,7 +97,7 @@ for f = 1:length(in_freq)
     in.time     = 1 : p.pulses / in_freq(f) / p.dt;       % Time axis in milliseconds
     rate        = 1 + sin(in_freq(f) * 2*pi .* in.time .* p.dt);	% Rate function
     rate        = rate ./ sum(rate) * p.pulses;           % Normalise rate function
-    actHpc      = poissrnd(repmat(rate,p.PCs,1));       % Poisson spike input
+    actHpc  = poissrnd(repmat(rate,p.PCs,1));       % Poisson spike input
     clear rate
     
     % Assign 1st and 2nd half of PCs to safe and dang compartment, respectively
@@ -108,7 +108,7 @@ for f = 1:length(in_freq)
     clear hpc_spike i
     
     
-    % Postsynaptic activity
+    % postsynaptic activity 
     % ---------------------------------------
     
     % Spontaneous activity (0.85 Hz in both safe and dangerous compartments)
@@ -119,7 +119,7 @@ for f = 1:length(in_freq)
     actAmy_trDang = rndPois_dang < (1+spontFiring)*p.dt; clear rndPois_dang
     
     
-    % Time evolution
+    % time evolution
     % ---------------------------------------
     
     % Simulate training - safe compartment
@@ -137,9 +137,9 @@ for f = 1:length(in_freq)
     in.t_end = p.TimeRecall;
     in.time  = p.dt:p.dt:in.t_end;
     
-
-    % Presynaptic activity
-    % ---------------------------------------
+    %%%%%%%%%%%%%%%%%%%%%%%%
+    % presynaptic activity %
+    %%%%%%%%%%%%%%%%%%%%%%%%
     
     % Acetylcholine is low during recall (= familiar environment)
     in.ACh = 0;
@@ -163,18 +163,18 @@ for f = 1:length(in_freq)
     hpcFiring_recall = hpcFiring_recall + randAct_hpc;
     hpcFiring_recall = heaviside(hpcFiring_recall - 0.1);
     
-
-    % Postsynaptic activity
-    % ---------------------------------------
+    %%%%%%%%%%%%%%%%%%%%%%%%%
+    % postsynaptic activity %
+    %%%%%%%%%%%%%%%%%%%%%%%%%
     
     % only spontaneous activity during recall
     rng('shuffle')
     rndPois = rand(p.FCs,length(in.time));
     amyFire_recall = rndPois < spontFiring*p.dt;
     
-
-    % Time evolution
-    % ---------------------------------------
+    %%%%%%%%%%%%%%%%%%
+    % time evolution %
+    %%%%%%%%%%%%%%%%%%
     
     % safe
     in.in_hpc = hpcFiring_recall;
