@@ -9,15 +9,16 @@ clear
 close all
 
 restoredefaultpath, clear RESTOREDEFAULTPATH_EXECUTED
-% addpath([pwd,'/tools']);
+
 
 %% Network and arena parameters
 p.PCs       = 200;     % number of total place cells (half in safe, half in dangerous compartment)
 p.FCs       = 50;      % number of fear cells
 p.W_0       = 0.25;    % initial synaptic strenght
-spontFiring = 0.85;    % spontaneous firing rate (Par� and Collins, 2000)
+actSpont    = 0.85;    % spontaneous firing rate (Par� and Collins, 2000)
 freezeThr   = 1.5;     % firing rate of BLA neurons during freezing (Parè and Collins, 2000). We take it as threshold for freezing.
 numTrainSpikes = 10;   % fixed number of spikes delivered during training
+
 
 %% Provide parameters for the neuron, synapse and plasticity models
 p.v_reset   = -75;      % reset potential
@@ -68,26 +69,31 @@ p.alpha2    = 0.55;
 p.beta1     = 80;
 p.beta2     = 80;
 
-%% additional settings
-p.pulses   = 100; % duration of the training phase (s)
+
+%% Additional settings
+p.pulses   = 100;  % duration of the training phase (s)
 p.TimeRecall = 5;  % how many theta cycles during the test phase
 
-%% set EPSP amplitude
-p.A_EPSP = 6; % 10 mV - within observed range (Strober at al., 2015; Rosenkranz 2012; Cho et al. 2012)
 
-%% run model
+%% Set EPSP amplitude
+p.A_EPSP = 6; % mV - within observed range (Strober at al., 2015; Rosenkranz 2012; Cho et al. 2012)
+
+
+%% Run simulation
 in_freq = 5:2:9;                  % training frequency
-W_0 = p.W_0 + zeros(p.PCs,p.FCs);     % initial synaptic strength vector
+W_0 = p.W_0 + zeros(p.PCs,p.FCs); % initial synaptic strength vector
 for f = 1:length(in_freq)
     
+    % Update user
     disp(['Simulation ' int2str(f) ' of ' int2str(length(in_freq)) '...']); % update user
+    
     
     %% Training 
     
     % Presynaptic activity 
     % ---------------------------------------
     
-    % theta frequency
+    % Theta frequency
     in.freq = in_freq(f);
     
     % Acetylcholine is high during training (= novel environment)
@@ -97,7 +103,7 @@ for f = 1:length(in_freq)
     in.time     = 1 : p.pulses / in_freq(f) / p.dt;       % Time axis in milliseconds
     rate        = 1 + sin(in_freq(f) * 2*pi .* in.time .* p.dt);	% Rate function
     rate        = rate ./ sum(rate) * p.pulses;           % Normalise rate function
-    actHpc      = poissrnd(repmat(rate,p.PCs,1));       % Poisson spike input
+    actHpc      = poissrnd(repmat(rate,p.PCs,1));         % Poisson spike input
     clear rate
     
     % Assign 1st and 2nd half of PCs to safe and dang compartment, respectively
@@ -113,10 +119,8 @@ for f = 1:length(in_freq)
     
     % Spontaneous activity (0.85 Hz in both safe and dangerous compartments)
     rng('shuffle')
-    rndPois_safe = rand(p.FCs,length(in.time));
-    rndPois_dang = rand(p.FCs,length(in.time));
-    actAmy_trSafe = rndPois_safe < spontFiring*p.dt; clear rndPois_safe
-    actAmy_trDang = rndPois_dang < (1+spontFiring)*p.dt; clear rndPois_dang
+    actAmy_trSafe = poissrnd(actSpont*p.dt*ones(p.FCs,length(in.time)));
+    actAmy_trDang = poissrnd((1+actSpont)*p.dt*ones(p.FCs,length(in.time)));
     
     
     % Time evolution
@@ -133,7 +137,7 @@ for f = 1:length(in_freq)
     
     %% Recall
     
-    % timing stuff
+    % Timing stuff
     in.t_end = p.TimeRecall;
     in.time  = p.dt:p.dt:in.t_end;
     
@@ -144,7 +148,7 @@ for f = 1:length(in_freq)
     % Acetylcholine is low during recall (= familiar environment)
     in.ACh = 0;
     
-    % theta frequency (constant during recall)
+    % Theta frequency (constant during recall)
     in.freq = 5;
     T = 1/in.freq;
     
@@ -158,7 +162,7 @@ for f = 1:length(in_freq)
     % add spontaneous activity
     rng('shuffle')
     rndPois_hpc = rand(p.PCs,length(in.time));
-    randAct_hpc = rndPois_hpc < spontFiring*p.dt; clear rndPois_hpc
+    randAct_hpc = rndPois_hpc < actSpont*p.dt; clear rndPois_hpc
     
     hpcFiring_recall = hpcFiring_recall + randAct_hpc;
     hpcFiring_recall = heaviside(hpcFiring_recall - 0.1);
@@ -170,7 +174,7 @@ for f = 1:length(in_freq)
     % only spontaneous activity during recall
     rng('shuffle')
     rndPois = rand(p.FCs,length(in.time));
-    amyFire_recall = rndPois < spontFiring*p.dt;
+    amyFire_recall = rndPois < actSpont*p.dt;
     
 
     % Time evolution
