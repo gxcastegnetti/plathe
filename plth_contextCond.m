@@ -84,7 +84,6 @@ in_freq = 5:2:9;                  % training frequency
 W_0 = p.W_0 + zeros(p.PCs,p.FCs); % initial synaptic strength vector
 for f = 1:length(in_freq)
     
-    % Update user
     disp(['Simulation ' int2str(f) ' of ' int2str(length(in_freq)) '...']); % update user
     
     

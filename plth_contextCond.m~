@@ -9,15 +9,16 @@ clear
 close all
 
 restoredefaultpath, clear RESTOREDEFAULTPATH_EXECUTED
-% addpath([pwd,'/tools']);
+
 
 %% Network and arena parameters
-p.PCs       = 40;     % number of total place cells (half in safe, half in dangerous compartment)
-p.FCs       = 10;      % number of fear cells
+p.PCs       = 200;     % number of total place cells (half in safe, half in dangerous compartment)
+p.FCs       = 50;      % number of fear cells
 p.W_0       = 0.25;    % initial synaptic strenght
 actSpont    = 0.85;    % spontaneous firing rate (Par� and Collins, 2000)
 freezeThr   = 1.5;     % firing rate of BLA neurons during freezing (Parè and Collins, 2000). We take it as threshold for freezing.
 numTrainSpikes = 10;   % fixed number of spikes delivered during training
+
 
 %% Provide parameters for the neuron, synapse and plasticity models
 p.v_reset   = -75;      % reset potential
@@ -85,6 +86,7 @@ for f = 1:length(in_freq)
     
     disp(['Simulation ' int2str(f) ' of ' int2str(length(in_freq)) '...']); % update user
     
+    
     %% Training 
     
     % Presynaptic activity 
@@ -100,7 +102,7 @@ for f = 1:length(in_freq)
     in.time     = 1 : p.pulses / in_freq(f) / p.dt;       % Time axis in milliseconds
     rate        = 1 + sin(in_freq(f) * 2*pi .* in.time .* p.dt);	% Rate function
     rate        = rate ./ sum(rate) * p.pulses;           % Normalise rate function
-    actHpc      = poissrnd(repmat(rate,p.PCs,1));       % Poisson spike input
+    actHpc      = poissrnd(repmat(rate,p.PCs,1));         % Poisson spike input
     clear rate
     
     % Assign 1st and 2nd half of PCs to safe and dang compartment, respectively
@@ -116,8 +118,8 @@ for f = 1:length(in_freq)
     
     % Spontaneous activity (0.85 Hz in both safe and dangerous compartments)
     rng('shuffle')
-    actAmy_trSafe = poissrnd(actSpont*p.dt*ones(in.time)); clear rndPois_safe
-    actAmy_trDang = poissrnd((1+actSpont)*p.dt); clear rndPois_dang
+    actAmy_trSafe = poissrnd(actSpont*p.dt*ones(p.FCs,length(in.time)));
+    actAmy_trDang = poissrnd((1+actSpont)*p.dt*ones(p.FCs,length(in.time)));
     
     
     % Time evolution
@@ -134,7 +136,7 @@ for f = 1:length(in_freq)
     
     %% Recall
     
-    % timing stuff
+    % Timing stuff
     in.t_end = p.TimeRecall;
     in.time  = p.dt:p.dt:in.t_end;
     
@@ -145,7 +147,7 @@ for f = 1:length(in_freq)
     % Acetylcholine is low during recall (= familiar environment)
     in.ACh = 0;
     
-    % theta frequency (constant during recall)
+    % Theta frequency (constant during recall)
     in.freq = 5;
     T = 1/in.freq;
     
