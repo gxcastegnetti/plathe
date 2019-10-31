@@ -12,8 +12,8 @@ restoredefaultpath, clear RESTOREDEFAULTPATH_EXECUTED
 
 
 %% Network and arena parameters
-p.PCs       = 800;     % number of total place cells (half in safe, half in dangerous compartment)
-p.FCs       = 200;      % number of fear cells
+p.PCs       = 500;     % number of total place cells (half in safe, half in dangerous compartment)
+p.FCs       = 50;      % number of fear cells
 p.W_0       = 0.25;    % initial synaptic strenght
 actSpont    = 0.85;    % spontaneous firing rate (Par� and Collins, 2000)
 freezeThr   = 1.5;     % firing rate of BLA neurons during freezing (Parè and Collins, 2000). We take it as threshold for freezing.
@@ -80,7 +80,7 @@ p.A_EPSP = 12; % mV - within observed range (Strober at al., 2015; Rosenkranz 20
 
 
 %% Run simulation
-in_freq = 4:4:10;                  % training frequency
+in_freq = 4:5;                  % training frequency
 W_0 = p.W_0 + zeros(p.PCs,p.FCs); % initial synaptic strength vector
 for f = 1:length(in_freq)
     
@@ -150,12 +150,12 @@ for f = 1:length(in_freq)
     in.ACh = 0;
     
     % Theta frequency (constant during recall)
-    in.freq = 5;
+    freqRecall = 5;
     T = 1/in.freq;
     
     % Hippocampal input as a Poisson process with theta-modulated rate
-    rate        = 1 + sin(in_freq(f) * 2*pi .* in.time .* p.dt);   % Rate function
-    rate        = rate ./ sum(rate) * in.freq * p.TimeRecall;      % Normalise rate function
+    rate        = 1 + sin(freqRecall * 2*pi .* in.time);   % Rate function
+    rate        = rate ./ sum(rate) * freqRecall * p.TimeRecall;      % Normalise rate function
     actHpc      = poissrnd(repmat(rate,p.PCs,1));    % Poisson spike input
     clear rate
     
@@ -174,7 +174,7 @@ for f = 1:length(in_freq)
 %     randAct_hpc = rndPois_hpc < actSpont*p.dt; clear rndPois_hpc
 %     
 %     hpcFiring_recall = hpcFiring_recall + randAct_hpc;
-%     hpcFiring_recall = heaviside(hpcFiring_recall - 0.1);
+     hpcFiring_recall = heaviside(hpcFiring_recall - 0.1);
     
 
     % Postsynaptic activity
@@ -235,24 +235,6 @@ end, clear ach f i T freezeThr
 %     set(gca,'fontsize',14)
 %     xlabel('W'),ylabel('Frequency')
 % end
-% view(3)
-
-%% Plot firing rate distribution
-% pd_x = 0:0.1:15;
-% figure('color',[1 1 1])
-% hold on
-% for f = 1:length(in_freq)
-%     values_safe = frTestSafe{f};
-%     pd_safe = fitdist(values_safe(:),'Kernel');
-%     values_dang = frTestDang{f};
-%     pd_dang = fitdist(values_dang(:),'Kernel');
-%     pd_y_safe = pdf(pd_safe,pd_x);
-%     pd_y_dang = pdf(pd_dang,pd_x);
-%     plot3(pd_x,in_freq(f)*ones(length(pd_x)),pd_y_safe,'color','b')
-%     plot3(pd_x,0.1+in_freq(f)*ones(length(pd_x)),pd_y_dang,'color','r')
-%     set(gca,'fontsize',14)
-%     xlabel('Firing rate'),ylabel('Frequency')
-% end, clear values_safe values_dang
 % view(3)
 
 %% Plot synaptic weight histograms
