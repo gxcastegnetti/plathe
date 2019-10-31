@@ -12,8 +12,8 @@ restoredefaultpath, clear RESTOREDEFAULTPATH_EXECUTED
 
 
 %% Network and arena parameters
-p.PCs       = 200;     % number of total place cells (half in safe, half in dangerous compartment)
-p.FCs       = 50;      % number of fear cells
+p.PCs       = 800;     % number of total place cells (half in safe, half in dangerous compartment)
+p.FCs       = 200;      % number of fear cells
 p.W_0       = 0.25;    % initial synaptic strenght
 actSpont    = 0.85;    % spontaneous firing rate (Par� and Collins, 2000)
 freezeThr   = 1.5;     % firing rate of BLA neurons during freezing (Parè and Collins, 2000). We take it as threshold for freezing.
@@ -76,18 +76,19 @@ p.TimeRecall = 5;  % how many theta cycles during the test phase
 
 
 %% Set EPSP amplitude
-p.A_EPSP = 6; % mV - within observed range (Strober at al., 2015; Rosenkranz 2012; Cho et al. 2012)
+p.A_EPSP = 12; % mV - within observed range (Strober at al., 2015; Rosenkranz 2012; Cho et al. 2012)
 
 
 %% Run simulation
-in_freq = 5:2:9;                  % training frequency
+in_freq = 4:4:10;                  % training frequency
 W_0 = p.W_0 + zeros(p.PCs,p.FCs); % initial synaptic strength vector
 for f = 1:length(in_freq)
     
     disp(['Simulation ' int2str(f) ' of ' int2str(length(in_freq)) '...']); % update user
-    
+    tic
     
     %% Training 
+    % ---------------------------------------
     
     % Presynaptic activity 
     % ---------------------------------------
@@ -135,6 +136,7 @@ for f = 1:length(in_freq)
     
     
     %% Recall
+    % ---------------------------------------
     
     % Timing stuff
     in.t_end = p.TimeRecall;
@@ -151,6 +153,12 @@ for f = 1:length(in_freq)
     in.freq = 5;
     T = 1/in.freq;
     
+    % Hippocampal input as a Poisson process with theta-modulated rate
+    rate        = 1 + sin(in_freq(f) * 2*pi .* in.time .* p.dt);   % Rate function
+    rate        = rate ./ sum(rate) * in.freq * p.TimeRecall;      % Normalise rate function
+    actHpc      = poissrnd(repmat(rate,p.PCs,1));    % Poisson spike input
+    clear rate
+    
     % hippocampal input at theta frequency
     hpcSpkTime_recall = repmat((T+(1-in.ACh)*T/2):T:in.t_end,p.PCs,1); % if ACh == 1 -> HPC fires at theta peak (maximal depolarisation)
     hpcFiring_recall = zeros(p.PCs,length(in.time));
@@ -158,13 +166,15 @@ for f = 1:length(in_freq)
         hpcFiring_recall(i,round(hpcSpkTime_recall/p.dt)) = 1;
     end
     
-    % add spontaneous activity
-    rng('shuffle')
-    rndPois_hpc = rand(p.PCs,length(in.time));
-    randAct_hpc = rndPois_hpc < actSpont*p.dt; clear rndPois_hpc
+    hpcFiring_recall = actHpc;
     
-    hpcFiring_recall = hpcFiring_recall + randAct_hpc;
-    hpcFiring_recall = heaviside(hpcFiring_recall - 0.1);
+%     % add spontaneous activity
+%     rng('shuffle')
+%     rndPois_hpc = rand(p.PCs,length(in.time));
+%     randAct_hpc = rndPois_hpc < actSpont*p.dt; clear rndPois_hpc
+%     
+%     hpcFiring_recall = hpcFiring_recall + randAct_hpc;
+%     hpcFiring_recall = heaviside(hpcFiring_recall - 0.1);
     
 
     % Postsynaptic activity
@@ -189,7 +199,10 @@ for f = 1:length(in_freq)
     in.in_hpc(1:round(p.PCs/2),:) = 0; % <--- retain only place cells tuned on dang compartment
     [~,frTestDang{f},acprops(f,1).post_dang] = plth_evolve(p,in,amyFire_recall,W_AftAll{f});
     
-    %% estimate freezing time
+    
+    %% Estimate freezing time
+    % ---------------------------------------
+    
     numCellsAboveThresh_safe = freezeThr < frTestSafe{f};
     numCellsAboveThresh_dang = freezeThr < frTestDang{f};
     
@@ -201,6 +214,8 @@ for f = 1:length(in_freq)
     percCellsAboveThresh_safe(f) = mean(numCellsAboveThresh_safe,1);
     percCellsAboveThresh_dang(f) = mean(numCellsAboveThresh_dang,1);
     clear numCellsAboveThresh_safe numCellsAboveThresh_dang amyFire_recall
+    
+    toc
     
 end, clear ach f i T freezeThr
 
@@ -222,25 +237,25 @@ end, clear ach f i T freezeThr
 % end
 % view(3)
 
-%% plot firing rate distribution
-pd_x = 0:0.1:15;
-figure('color',[1 1 1])
-hold on
-for f = 1:length(in_freq)
-    values_safe = frTestSafe{f};
-    pd_safe = fitdist(values_safe(:),'Kernel');
-    values_dang = frTestDang{f};
-    pd_dang = fitdist(values_dang(:),'Kernel');
-    pd_y_safe = pdf(pd_safe,pd_x);
-    pd_y_dang = pdf(pd_dang,pd_x);
-    plot3(pd_x,in_freq(f)*ones(length(pd_x)),pd_y_safe,'color','b')
-    plot3(pd_x,0.1+in_freq(f)*ones(length(pd_x)),pd_y_dang,'color','r')
-    set(gca,'fontsize',14)
-    xlabel('Firing rate'),ylabel('Frequency')
-end, clear values_safe values_dang
-view(3)
+%% Plot firing rate distribution
+% pd_x = 0:0.1:15;
+% figure('color',[1 1 1])
+% hold on
+% for f = 1:length(in_freq)
+%     values_safe = frTestSafe{f};
+%     pd_safe = fitdist(values_safe(:),'Kernel');
+%     values_dang = frTestDang{f};
+%     pd_dang = fitdist(values_dang(:),'Kernel');
+%     pd_y_safe = pdf(pd_safe,pd_x);
+%     pd_y_dang = pdf(pd_dang,pd_x);
+%     plot3(pd_x,in_freq(f)*ones(length(pd_x)),pd_y_safe,'color','b')
+%     plot3(pd_x,0.1+in_freq(f)*ones(length(pd_x)),pd_y_dang,'color','r')
+%     set(gca,'fontsize',14)
+%     xlabel('Firing rate'),ylabel('Frequency')
+% end, clear values_safe values_dang
+% view(3)
 
-%% plot synaptic weight histograms
+%% Plot synaptic weight histograms
 figure('color',[1 1 1])
 hold on
 for f = 1:length(in_freq)
@@ -277,7 +292,7 @@ xlabel('Theta frequency'),ylabel('W')
 legend('Safe comp.','Threatening comp.','location','northwest'), legend boxoff
 set(gca,'fontsize',18)
 
-%% plot firing rate scatter
+%% Plot firing rate scatter
 figure('color',[1 1 1])
 hold on
 for f = 1:length(in_freq)
@@ -372,7 +387,7 @@ axis square
 
 %% Nice figure for paper
 endFreq = 52;
-yMax = 10;
+yMax = 100;
 fontSize = 16;
 colorSafe = [0.6 0.6 0.8];
 colorDang = [0.2 0.2 0.7];
