@@ -12,8 +12,8 @@ restoredefaultpath, clear RESTOREDEFAULTPATH_EXECUTED
 
 
 %% Network and arena parameters
-p.PCs       = 500;     % number of total place cells (half in safe, half in dangerous compartment)
-p.FCs       = 50;      % number of fear cells
+p.PCs       = 400;     % number of total place cells (half in safe, half in dangerous compartment)
+p.FCs       = 100;      % number of fear cells
 p.W_0       = 0.25;    % initial synaptic strenght
 actSpont    = 0.85;    % spontaneous firing rate (Par� and Collins, 2000)
 freezeThr   = 1.5;     % firing rate of BLA neurons during freezing (Parè and Collins, 2000). We take it as threshold for freezing.
@@ -72,15 +72,15 @@ p.beta2     = 80;
 
 %% Additional settings
 p.pulses   = 100;  % duration of the training phase (s)
-p.TimeRecall = 5;  % how many theta cycles during the test phase
+p.TimeRecall = 20;  % how many theta cycles during the test phase
 
 
 %% Set EPSP amplitude
-p.A_EPSP = 12; % mV - within observed range (Strober at al., 2015; Rosenkranz 2012; Cho et al. 2012)
+p.A_EPSP = 10; % mV - within observed range (Strober at al., 2015; Rosenkranz 2012; Cho et al. 2012)
 
 
 %% Run simulation
-in_freq = 4:5;                  % training frequency
+in_freq = [4.5 5];                  % training frequency
 W_0 = p.W_0 + zeros(p.PCs,p.FCs); % initial synaptic strength vector
 for f = 1:length(in_freq)
     
@@ -368,8 +368,8 @@ ylim([0 yMax]),title(['f = ', num2str(in_freq(2)),'- PostDang'])
 axis square
 
 %% Nice figure for paper
-endFreq = 52;
-yMax = 100;
+endFreq = 52;clos
+yMax = 50;
 fontSize = 16;
 colorSafe = [0.6 0.6 0.8];
 colorDang = [0.2 0.2 0.7];

@@ -8,11 +8,11 @@ close all
 restoredefaultpath, clear RESTOREDEFAULTPATH_EXECUTED
 
 %% Network and arena parameters
-p.PCs       = 100;      % number of total place cells (half in safe, half in dangerous compartment)
-p.FCs       = 25;       % number of fear cells
+p.PCs       = 40;      % number of total place cells (half in safe, half in dangerous compartment)
+p.FCs       = 10;       % number of fear cells
 p.W_0       = 0.25;     % initial synaptic strenght
-SpontAmy    = 0.85;     % spontaneous firing rate (Par� and Collins, 2000)
-freezeThr   = 1.5;      % firing rate of BLA neurons during freezing (Par� and Collins, 2000). We take it as threshold for freezing.
+actSpont    = 0.85;     % spontaneous firing rate (Par� and Collins, 2000)
+freezeThr   = 5;      % firing rate of BLA neurons during freezing (Par� and Collins, 2000). We take it as threshold for freezing.
 numTrainSpikes = 20;  % fixed number of spikes delivered during training
 nSweeps     = 10;
 
@@ -65,13 +65,13 @@ p.alpha2    = 0.55;
 p.beta1     = 80;
 p.beta2     = 80;
 
-%% additional settings
-p.TrialNum   = 20; % how many stimuli during the training phase
-p.TrialDur   = 1;  % trial duration during training
+
+%% Additional settings
+p.pulses   = 100;  % duration of the training phase (s)
 p.TimeRecall = 5;  % how many theta cycles during the test phase
 
 %% set EPSP amplitude
-p.A_EPSP = 1.45*0.6; % 13 mV - within observed range (Strober at al., 2015; Rosenkranz 2012; Cho et al. 2012)
+p.A_EPSP = 10; % 13 mV - within observed range (Strober at al., 2015; Rosenkranz 2012; Cho et al. 2012)
 
 %% run model
 in_freq = 4.5:0.5:5; % training frequency
@@ -84,125 +84,128 @@ for sweep = 1:nSweeps
         disp(['Simulation ' int2str(c) ' of ' int2str(length(in_freq)*nSweeps) '...']); % update user
         c = c+1;
         
-        %% training
-        
-        % timing stuff
-        in.t_end = p.TrialNum*p.TrialDur;   % training duration
-        in.time  = p.dt:p.dt:in.t_end;      % training time vector
-        
-        %%%%%%%%%%%%%%%%%%%%%%%%
-        % presynaptic activity %
-        %%%%%%%%%%%%%%%%%%%%%%%%
-        
-        % theta frequency
+        %% Training 
+        % ---------------------------------------
+
+        % Presynaptic activity 
+        % ---------------------------------------
+
+        % Theta frequency
         in.freq = in_freq(f);
-        T = 1/in.freq;
-        
+
         % Acetylcholine is high during training (= novel environment)
         in.ACh = 1;
-        
-        % hippocampal input at theta frequency
-        hpc_times = repmat((T+(1-in.ACh)*T/2):T:in.t_end,p.PCs,1); % if ACh == 1 -> HPC fires at theta peak (maximal depolarisation)
-        hpc_spike = zeros(p.PCs,length(in.time));
-        for i = 1:p.PCs
-            hpc_spike(i,round(hpc_times/p.dt)) = 1;
-        end
-        hpcFiring_train_safe = hpc_spike;
-        hpcFiring_train_safe(1+round(p.PCs/2):end,:) = 0;
-        hpcFiring_train_dang = hpc_spike;
-        hpcFiring_train_dang(1:round(p.PCs/2),:) = 0;
+
+        % Hippocampal input as a Poisson process with theta-modulated rate
+        in.time     = 1 : p.pulses / in_freq(f) / p.dt;       % Time axis in milliseconds
+        rate        = 1 + sin(in_freq(f) * 2*pi .* in.time .* p.dt);	% Rate function
+        rate        = rate ./ sum(rate) * p.pulses;           % Normalise rate function
+        actHpc      = poissrnd(repmat(rate,p.PCs,1));         % Poisson spike input
+        clear rate
+
+        % Assign 1st and 2nd half of PCs to safe and dang compartment, respectively
+        actHpc_trSafe = actHpc;
+        actHpc_trSafe(1+round(p.PCs/2):end,:) = 0;
+        actHpc_trDang = actHpc;
+        actHpc_trDang(1:round(p.PCs/2),:) = 0;
         clear hpc_spike i
-        
-        %%%%%%%%%%%%%%%%%%%%%%%%%
-        % postsynaptic activity %
-        %%%%%%%%%%%%%%%%%%%%%%%%%
-        
-        % spontaneous activity (0.85 Hz in both safe and dangerous compartments)
+
+
+        % Postsynaptic activity
+        % ---------------------------------------
+
+        % Spontaneous activity (0.85 Hz in both safe and dangerous compartments)
         rng('shuffle')
-        rndPois_safe = rand(p.FCs,length(in.time));
-        rndPois_dang = rand(p.FCs,length(in.time));
-        amyFire_safe = rndPois_safe < SpontAmy*p.dt; clear rndPois_safe
-        amyFire_dang = rndPois_dang < SpontAmy*p.dt; clear rndPois_dang
-        
-        % add threat-related spikes to dangerous compartment
-        for i = 1:p.FCs
-            timeIdxVecShuff = randperm(1000);
-            addConstTime = 0:1000:(1000*(numTrainSpikes-1));
-            spikeIdx = timeIdxVecShuff(1:numTrainSpikes) + addConstTime;
-            spikeBoo = false(1,length(in.time));
-            spikeBoo(spikeIdx) = true;
-            amyFire_dang(i,:) = amyFire_dang(i,:) + spikeBoo;
-        end, clear spikeIdxdx spikeBoo timeIdxVecShuff i
-        
-        %%%%%%%%%%%%%%%%%%
-        % time evolution %
-        %%%%%%%%%%%%%%%%%%
-        
-        % simulate training - safe compartment
-        in.in_hpc = hpcFiring_train_safe;
-        [W_AftSafe{f},~,acprops(f,1).pre_safe] = plth_evolve(p,in,amyFire_safe,W_0);
-        
-        % simulate training - dangerous compartment
-        in.in_hpc = hpcFiring_train_dang;
-        [W_AftAll{f},~,acprops(f,1).pre_dang] = plth_evolve(p,in,amyFire_dang,W_AftSafe{f});
-        
-        %% recall
-        
-        % timing stuff
+        actAmy_trSafe = poissrnd(actSpont*p.dt*ones(p.FCs,length(in.time)));
+        actAmy_trDang = poissrnd((1+actSpont)*p.dt*ones(p.FCs,length(in.time)));
+
+
+        % Time evolution
+        % ---------------------------------------
+
+        % Simulate training - safe compartment
+        in.in_hpc = actHpc_trSafe;
+        [W_AftSafe{f},~,acprops(f,1).pre_safe] = plth_evolve(p,in,actAmy_trSafe,W_0);
+
+        % Simulate training - dangerous compartment
+        in.in_hpc = actHpc_trDang;
+        [W_AftAll{f},~,acprops(f,1).pre_dang] = plth_evolve(p,in,actAmy_trDang,W_AftSafe{f});
+
+
+        %% Recall
+        % ---------------------------------------
+
+        % Timing stuff
         in.t_end = p.TimeRecall;
         in.time  = p.dt:p.dt:in.t_end;
-        
-        %%%%%%%%%%%%%%%%%%%%%%%%
-        % presynaptic activity %
-        %%%%%%%%%%%%%%%%%%%%%%%%
-        
+
+
+        % Presynaptic activity
+        % ---------------------------------------
+
         % Acetylcholine is low during recall (= familiar environment)
         in.ACh = 0;
-        
-        % theta frequency (constant during recall)
-        in.freq = 6.5;
+
+        % Theta frequency (constant during recall)
+        freqRecall = 5;
         T = 1/in.freq;
-        
+
+        % Hippocampal input as a Poisson process with theta-modulated rate
+        rate        = 1 + sin(freqRecall * 2*pi .* in.time);   % Rate function
+        rate        = rate ./ sum(rate) * freqRecall * p.TimeRecall;      % Normalise rate function
+        actHpc      = poissrnd(repmat(rate,p.PCs,1));    % Poisson spike input
+        clear rate
+
         % hippocampal input at theta frequency
         hpcSpkTime_recall = repmat((T+(1-in.ACh)*T/2):T:in.t_end,p.PCs,1); % if ACh == 1 -> HPC fires at theta peak (maximal depolarisation)
         hpcFiring_recall = zeros(p.PCs,length(in.time));
         for i = 1:p.PCs
             hpcFiring_recall(i,round(hpcSpkTime_recall/p.dt)) = 1;
         end
-        
-        %%%%%%%%%%%%%%%%%%%%%%%%%
-        % postsynaptic activity %
-        %%%%%%%%%%%%%%%%%%%%%%%%%
-        
+
+        hpcFiring_recall = actHpc;
+
+    %     % add spontaneous activity
+    %     rng('shuffle')
+    %     rndPois_hpc = rand(p.PCs,length(in.time));
+    %     randAct_hpc = rndPois_hpc < actSpont*p.dt; clear rndPois_hpc
+    %     
+    %     hpcFiring_recall = hpcFiring_recall + randAct_hpc;
+         hpcFiring_recall = heaviside(hpcFiring_recall - 0.1);
+
+
+        % Postsynaptic activity
+        % ---------------------------------------
+
         % only spontaneous activity during recall
         rng('shuffle')
         rndPois = rand(p.FCs,length(in.time));
-        amyFire_recall = rndPois < SpontAmy*p.dt;
-        
-        %%%%%%%%%%%%%%%%%%
-        % time evolution %
-        %%%%%%%%%%%%%%%%%%
-        
+        amyFire_recall = rndPois < actSpont*p.dt;
+
+
+        % Time evolution
+        % ---------------------------------------
+
         % safe
         in.in_hpc = hpcFiring_recall;
         in.in_hpc(1+round(p.PCs/2):end,:) = 0; % <--- retain only place cells tuned on safe compartment
-        [~,frRecall_safe{f},acprops(f,1).post_safe] = plth_evolve(p,in,amyFire_recall,W_AftAll{f}); %#ok<*SAGROW>
-        
+        [~,frTestSafe{f},acprops(f,1).post_safe] = plth_evolve(p,in,amyFire_recall,W_AftAll{f}); %#ok<*SAGROW>
+
         % dang
         in.in_hpc = hpcFiring_recall;
         in.in_hpc(1:round(p.PCs/2),:) = 0; % <--- retain only place cells tuned on dang compartment
-        [~,frRecall_dang{f},acprops(f,1).post_dang] = plth_evolve(p,in,amyFire_recall,W_AftAll{f});
+        [~,frTestDang{f},acprops(f,1).post_dang] = plth_evolve(p,in,amyFire_recall,W_AftAll{f});
         
         
         %% summary
         
         % average firing rate
-        frRecall_mean_safe(sweep,f) = mean(frRecall_safe{f}); %#ok<*SAGROW>
-        frRecall_mean_dang(sweep,f) = mean(frRecall_dang{f});
+        frRecall_mean_safe(sweep,f) = mean(frTestSafe{f}); %#ok<*SAGROW>
+        frRecall_mean_dang(sweep,f) = mean(frTestDang{f});
         
         % percentage of neurons that overcome threshold
-        frRecall_abThr_safe(sweep,f) = sum(frRecall_safe{f} > freezeThr)/p.FCs;
-        frRecall_abThr_dang(sweep,f) = sum(frRecall_dang{f} > freezeThr)/p.FCs;
+        frRecall_abThr_safe(sweep,f) = sum(frTestSafe{f} > freezeThr)/p.FCs;
+        frRecall_abThr_dang(sweep,f) = sum(frTestDang{f} > freezeThr)/p.FCs;
         
         toc
     end, clear f i T
