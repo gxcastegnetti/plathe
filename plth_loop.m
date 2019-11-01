@@ -8,13 +8,12 @@ close all
 restoredefaultpath, clear RESTOREDEFAULTPATH_EXECUTED
 
 %% Network and arena parameters
-p.PCs       = 40;      % number of total place cells (half in safe, half in dangerous compartment)
-p.FCs       = 10;       % number of fear cells
+p.PCs       = 160;      % number of total place cells (half in safe, half in dangerous compartment)
+p.FCs       = 40;       % number of fear cells
 p.W_0       = 0.25;     % initial synaptic strenght
 actSpont    = 0.85;     % spontaneous firing rate (Par� and Collins, 2000)
 freezeThr   = 5;      % firing rate of BLA neurons during freezing (Par� and Collins, 2000). We take it as threshold for freezing.
-numTrainSpikes = 20;  % fixed number of spikes delivered during training
-nSweeps     = 10;
+nSweeps     = 20;
 
 %% Provide parameters for the neuron, synapse and plasticity models
 p.v_reset   = -75;      % reset potential
@@ -24,7 +23,7 @@ p.v_rest    = -65;      % resting potential
 p.tau_m     = 0.02;     % time constant of the neural model
 p.R         = 10;       % resistance in the neural model
 p.dt        = 0.001;    % width of the time step
-p.lambda    = 0;
+p.lambda    = 0.1;
 
 % EPSP
 p.tau_1     = 50;
@@ -74,7 +73,7 @@ p.TimeRecall = 5;  % how many theta cycles during the test phase
 p.A_EPSP = 10; % 13 mV - within observed range (Strober at al., 2015; Rosenkranz 2012; Cho et al. 2012)
 
 %% run model
-in_freq = 4.5:0.5:5; % training frequency
+in_freq = [4.5 5]; % training frequency
 c = 1;
 for sweep = 1:nSweeps
     W_0 = p.W_0 + zeros(p.PCs,p.FCs);               % initial synaptic strength vector
