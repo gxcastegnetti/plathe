@@ -8,12 +8,12 @@ close all
 restoredefaultpath, clear RESTOREDEFAULTPATH_EXECUTED
 
 %% Network and arena parameters
-p.PCs       = 160;      % number of total place cells (half in safe, half in dangerous compartment)
-p.FCs       = 40;       % number of fear cells
+p.PCs       = 400;      % number of total place cells (half in safe, half in dangerous compartment)
+p.FCs       = 100;       % number of fear cells
 p.W_0       = 0.25;     % initial synaptic strenght
 actSpont    = 0.85;     % spontaneous firing rate (Par� and Collins, 2000)
-freezeThr   = 5;      % firing rate of BLA neurons during freezing (Par� and Collins, 2000). We take it as threshold for freezing.
-nSweeps     = 20;
+freezeThr   = 1.5;      % firing rate of BLA neurons during freezing (Par� and Collins, 2000). We take it as threshold for freezing.
+nSweeps     = 5;
 
 %% Provide parameters for the neuron, synapse and plasticity models
 p.v_reset   = -75;      % reset potential
@@ -69,11 +69,13 @@ p.beta2     = 80;
 p.pulses   = 100;  % duration of the training phase (s)
 p.TimeRecall = 5;  % how many theta cycles during the test phase
 
+
 %% set EPSP amplitude
-p.A_EPSP = 10; % 13 mV - within observed range (Strober at al., 2015; Rosenkranz 2012; Cho et al. 2012)
+p.A_EPSP = 8; % 13 mV - within observed range (Strober at al., 2015; Rosenkranz 2012; Cho et al. 2012)
+
 
 %% run model
-in_freq = [4.5 5]; % training frequency
+in_freq = [5.5 6]; % training frequency
 c = 1;
 for sweep = 1:nSweeps
     W_0 = p.W_0 + zeros(p.PCs,p.FCs);               % initial synaptic strength vector
@@ -146,7 +148,7 @@ for sweep = 1:nSweeps
         in.ACh = 0;
 
         % Theta frequency (constant during recall)
-        freqRecall = 5;
+        freqRecall = in_freq(2);
         T = 1/in.freq;
 
         % Hippocampal input as a Poisson process with theta-modulated rate
@@ -210,6 +212,7 @@ for sweep = 1:nSweeps
     end, clear f i T
 end
 
+
 %% Percentage of simulations in which avg firing rate overcomes threshold.
 frRecall_avgAbThr_safe = freezeThr < frRecall_mean_safe;
 frRecall_avgAbThr_dang = freezeThr < frRecall_mean_dang;
@@ -218,11 +221,13 @@ freezePercOfSimul_dang = mean(frRecall_avgAbThr_dang,1);
 percFreezeSafeStd = std(frRecall_avgAbThr_safe,1);
 percFreezeDangStd = std(frRecall_avgAbThr_dang,1);
 
+
 %% Percentage of neurons overcoming threshold
 frRecall_abThr_mean_safe = mean(frRecall_abThr_safe,1);
 frRecall_abThr_mean_dang = mean(frRecall_abThr_dang,1);
 frRecall_abThr_std_safe  = std(frRecall_abThr_safe,1);
 frRecall_abThr_std_dang  = std(frRecall_abThr_dang,1);
+
 
 %% plot freezing percentage - mean
 figure('color',[1 1 1]),hold on
@@ -231,12 +236,14 @@ xlabel('Training theta frequency (Hz)'),ylabel('% freezing')
 legend('Safe comp.','Threatening comp.','location','northwest'), legend boxoff
 set(gca,'fontsize',18,'xtick',in_freq), ylim([-0.05,1])
 
+
 %% plot average number of neurons above threshold
 figure('color',[1 1 1]),hold on
 bar(in_freq,[frRecall_abThr_mean_safe' frRecall_abThr_mean_dang'])
 xlabel('Training theta frequency (Hz)'),ylabel('% cells > threshold')
 legend('Safe comp.','Threatening comp.','location','northwest'), legend boxoff
 set(gca,'fontsize',18,'xtick',in_freq), ylim([0,1.2*max(frRecall_abThr_mean_dang)])
+
 
 %% plot theta coherence
 

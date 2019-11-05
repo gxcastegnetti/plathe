@@ -76,11 +76,11 @@ p.TimeRecall = 20;  % how many theta cycles during the test phase
 
 
 %% Set EPSP amplitude
-p.A_EPSP = 10; % mV - within observed range (Strober at al., 2015; Rosenkranz 2012; Cho et al. 2012)
+p.A_EPSP = 8; % mV - within observed range (Strober at al., 2015; Rosenkranz 2012; Cho et al. 2012)
 
 
 %% Run simulation
-in_freq = [4.5 5];                  % training frequency
+in_freq = [5.5 6.0];                  % training frequency
 W_0 = p.W_0 + zeros(p.PCs,p.FCs); % initial synaptic strength vector
 for f = 1:length(in_freq)
     
@@ -150,7 +150,7 @@ for f = 1:length(in_freq)
     in.ACh = 0;
     
     % Theta frequency (constant during recall)
-    freqRecall = 5;
+    freqRecall = in_freq(2);
     T = 1/in.freq;
     
     % Hippocampal input as a Poisson process with theta-modulated rate
@@ -368,7 +368,7 @@ ylim([0 yMax]),title(['f = ', num2str(in_freq(2)),'- PostDang'])
 axis square
 
 %% Nice figure for paper
-endFreq = 52;clos
+endFreq = 52;
 yMax = 50;
 fontSize = 16;
 colorSafe = [0.6 0.6 0.8];
