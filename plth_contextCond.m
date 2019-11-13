@@ -272,7 +272,7 @@ end
 set(gca,'fontsize',14)
 xlabel('Theta frequency'),ylabel('W')
 legend('Safe comp.','Threatening comp.','location','northwest'), legend boxoff
-set(gca,'fontsize',18)
+set(gca,'fontsize',18), ylim([0.95 1.6])
 
 %% Plot firing rate scatter
 figure('color',[1 1 1])
@@ -323,53 +323,53 @@ set(gca,'fontsize',18)
 figure('color',[1 1 1])
 
 %% low freq
-yMax = 1;
-
-subplot(2,4,1)
-plot(acprops(2).pre_safe.freq,acprops(1).pre_safe.power,'k','LineWidth',3)
-ylim([0 yMax]),title(['f = ', num2str(in_freq(1)),'- PreSafe'])
-axis square
-
-subplot(2,4,2)
-plot(acprops(2).pre_safe.freq,acprops(1).post_safe.power,'k','LineWidth',3)
-ylim([0 yMax]),title(['f = ', num2str(in_freq(1)),'- PostSafe'])
-axis square
-
-subplot(2,4,5)
-plot(acprops(2).pre_safe.freq,acprops(1).pre_dang.power,'k','LineWidth',3)
-ylim([0 yMax]),title(['f = ', num2str(in_freq(1)),'- PreDang'])
-axis square
-
-subplot(2,4,6)
-plot(acprops(2).pre_safe.freq,acprops(1).post_dang.power,'k','LineWidth',3)
-ylim([0 yMax]),title(['f = ', num2str(in_freq(1)),'- PostDang'])
-axis square
-
-%% high freq
-
-subplot(2,4,3)
-plot(acprops(2).pre_safe.freq,acprops(2).pre_safe.power,'k','LineWidth',3)
-ylim([0 yMax]),title(['f = ', num2str(in_freq(2)),'- PreSafe'])
-axis square
-
-subplot(2,4,4)
-plot(acprops(2).pre_safe.freq,acprops(2).post_safe.power,'k','LineWidth',3)
-ylim([0 yMax]),title(['f = ', num2str(in_freq(2)),'- PostSafe'])
-axis square
-
-subplot(2,4,7)
-plot(acprops(2).pre_safe.freq,acprops(2).pre_dang.power,'k','LineWidth',3)
-ylim([0 yMax]),title(['f = ', num2str(in_freq(2)),'- PreDang'])
-axis square
-
-subplot(2,4,8)
-plot(acprops(2).pre_safe.freq,acprops(2).post_dang.power,'k','LineWidth',3)
-ylim([0 yMax]),title(['f = ', num2str(in_freq(2)),'- PostDang'])
-axis square
+% yMax = 1;
+% 
+% subplot(2,4,1)
+% plot(acprops(2).pre_safe.freq,acprops(1).pre_safe.power,'k','LineWidth',3)
+% ylim([0 yMax]),title(['f = ', num2str(in_freq(1)),'- PreSafe'])
+% axis square
+% 
+% subplot(2,4,2)
+% plot(acprops(2).pre_safe.freq,acprops(1).post_safe.power,'k','LineWidth',3)
+% ylim([0 yMax]),title(['f = ', num2str(in_freq(1)),'- PostSafe'])
+% axis square
+% 
+% subplot(2,4,5)
+% plot(acprops(2).pre_safe.freq,acprops(1).pre_dang.power,'k','LineWidth',3)
+% ylim([0 yMax]),title(['f = ', num2str(in_freq(1)),'- PreDang'])
+% axis square
+% 
+% subplot(2,4,6)
+% plot(acprops(2).pre_safe.freq,acprops(1).post_dang.power,'k','LineWidth',3)
+% ylim([0 yMax]),title(['f = ', num2str(in_freq(1)),'- PostDang'])
+% axis square
+% 
+% %% high freq
+% 
+% subplot(2,4,3)
+% plot(acprops(2).pre_safe.freq,acprops(2).pre_safe.power,'k','LineWidth',3)
+% ylim([0 yMax]),title(['f = ', num2str(in_freq(2)),'- PreSafe'])
+% axis square
+% 
+% subplot(2,4,4)
+% plot(acprops(2).pre_safe.freq,acprops(2).post_safe.power,'k','LineWidth',3)
+% ylim([0 yMax]),title(['f = ', num2str(in_freq(2)),'- PostSafe'])
+% axis square
+% 
+% subplot(2,4,7)
+% plot(acprops(2).pre_safe.freq,acprops(2).pre_dang.power,'k','LineWidth',3)
+% ylim([0 yMax]),title(['f = ', num2str(in_freq(2)),'- PreDang'])
+% axis square
+% 
+% subplot(2,4,8)
+% plot(acprops(2).pre_safe.freq,acprops(2).post_dang.power,'k','LineWidth',3)
+% ylim([0 yMax]),title(['f = ', num2str(in_freq(2)),'- PostDang'])
+% axis square
 
 %% Nice figure for paper
 endFreq = 52;
-yMax = 50;
+yMax = 15;
 fontSize = 16;
 colorSafe = [0.6 0.6 0.8];
 colorDang = [0.2 0.2 0.7];
@@ -407,26 +407,26 @@ set(gca,'fontsize',fontSize)
 ylim([-0.01 yMax])
 
 %% plot power in theta band (4-10Hz)
-freqThetaBand = 23:52;
-
-% take avgs
-thetaPower.low.safe.pre = mean(acprops(1).pre_safe.power(freqThetaBand));
-thetaPower.low.safe.post = mean(acprops(1).post_safe.power(freqThetaBand));
-thetaPower.low.dang.pre = mean(acprops(1).pre_dang.power(freqThetaBand));
-thetaPower.low.dang.post = mean(acprops(1).post_dang.power(freqThetaBand));
-thetaPower.hig.safe.pre = mean(acprops(2).pre_safe.power(freqThetaBand));
-thetaPower.hig.safe.post = mean(acprops(2).post_safe.power(freqThetaBand));
-thetaPower.hig.dang.pre = mean(acprops(2).pre_dang.power(freqThetaBand));
-thetaPower.hig.dang.post = mean(acprops(2).post_dang.power(freqThetaBand));
-
-aaa(1) = mean(acprops(1).pre_safe.power(freqThetaBand));
-aaa(2) = mean(acprops(1).post_safe.power(freqThetaBand));
-aaa(3) = mean(acprops(1).pre_dang.power(freqThetaBand));
-aaa(4) = mean(acprops(1).post_dang.power(freqThetaBand));
-aaa(5) = mean(acprops(2).pre_safe.power(freqThetaBand));
-aaa(6) = mean(acprops(2).post_safe.power(freqThetaBand));
-aaa(7) = mean(acprops(2).pre_dang.power(freqThetaBand));
-aaa(8) = mean(acprops(2).post_dang.power(freqThetaBand));
-
-figure('color',[1 1 1])
-bar(aaa)
+% freqThetaBand = 23:52;
+% 
+% % take avgs
+% thetaPower.low.safe.pre = mean(acprops(1).pre_safe.power(freqThetaBand));
+% thetaPower.low.safe.post = mean(acprops(1).post_safe.power(freqThetaBand));
+% thetaPower.low.dang.pre = mean(acprops(1).pre_dang.power(freqThetaBand));
+% thetaPower.low.dang.post = mean(acprops(1).post_dang.power(freqThetaBand));
+% thetaPower.hig.safe.pre = mean(acprops(2).pre_safe.power(freqThetaBand));
+% thetaPower.hig.safe.post = mean(acprops(2).post_safe.power(freqThetaBand));
+% thetaPower.hig.dang.pre = mean(acprops(2).pre_dang.power(freqThetaBand));
+% thetaPower.hig.dang.post = mean(acprops(2).post_dang.power(freqThetaBand));
+% 
+% aaa(1) = mean(acprops(1).pre_safe.power(freqThetaBand));
+% aaa(2) = mean(acprops(1).post_safe.power(freqThetaBand));
+% aaa(3) = mean(acprops(1).pre_dang.power(freqThetaBand));
+% aaa(4) = mean(acprops(1).post_dang.power(freqThetaBand));
+% aaa(5) = mean(acprops(2).pre_safe.power(freqThetaBand));
+% aaa(6) = mean(acprops(2).post_safe.power(freqThetaBand));
+% aaa(7) = mean(acprops(2).pre_dang.power(freqThetaBand));
+% aaa(8) = mean(acprops(2).post_dang.power(freqThetaBand));
+% 
+% figure('color',[1 1 1])
+% bar(aaa)

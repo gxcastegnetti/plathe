@@ -12,8 +12,8 @@ p.PCs       = 400;      % number of total place cells (half in safe, half in dan
 p.FCs       = 100;       % number of fear cells
 p.W_0       = 0.25;     % initial synaptic strenght
 actSpont    = 0.85;     % spontaneous firing rate (Parï¿½ and Collins, 2000)
-freezeThr   = 1.5;      % firing rate of BLA neurons during freezing (Parï¿½ and Collins, 2000). We take it as threshold for freezing.
-nSweeps     = 5;
+freezeThr   = 1.5;      % firing rate of BLA neurons during freezing (Paré and Collins, 2000). We take it as threshold for freezing.
+nSweeps     = 100;
 
 %% Provide parameters for the neuron, synapse and plasticity models
 p.v_reset   = -75;      % reset potential
@@ -67,7 +67,7 @@ p.beta2     = 80;
 
 %% Additional settings
 p.pulses   = 100;  % duration of the training phase (s)
-p.TimeRecall = 5;  % how many theta cycles during the test phase
+p.TimeRecall = 20;  % how many theta cycles during the test phase
 
 
 %% set EPSP amplitude
